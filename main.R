@@ -3,112 +3,115 @@ library(ggplot2)
 # Загрузка датасета
 data <- read.csv("data.csv")
 data <- data[sample(nrow(data), 200), ]
+# Перевод фичи в категориальный тип данных
+data$Month <- as.factor(data$Month)
 
 # Просмотр основных данных из датасета
 head(data)
 summary(data)
 dim(data)
 
-### Работа с Close
+# Построение графиков для визуализации
+visualize_distribution = function(feature, name) {
+  # Визуадизация распределения
+  ggplot(data, aes(x = feature)) +
+    # Гистограмма
+    geom_histogram(aes(y = after_stat(density)), bins = 30, fill = "skyblue", color = "black") +
+    # Полигон частот
+    geom_density(alpha = 0.4, fill = "lightgreen") + ggtitle(paste("Распределение", name, sep=" ")) +
+    
+    # Добавление подписей осей
+    xlab(name) + ylab("Density")
+}
+
+# Построение графиков для визуализации категориальной переменной
+visualize_factor_distribution = function(feature, name) {
+  ggplot(data, aes(x = factor(feature))) + 
+    geom_bar(fill = "skyblue", color = "black") + 
+    # Добавление подписей осей 
+    xlab(name) + ylab("Count") + 
+    ggtitle(paste("Распределение", name, sep=" ")) 
+}
+    
+# Вывод метрик
+show_metrics = function(feature) {
+  # Среднее
+  mean <- sum(feature) / length(feature)
+  mean_right <- mean(feature)
+  
+  # Медиана
+  sorted <- sort(feature)
+  if (length(sorted) %% 2 == 1) { 
+    median <- sorted[(length(sorted) + 1) %/% 2] 
+  } else { 
+    median <- (sorted[length(sorted) %/% 2] + sorted[(length(sorted) %/% 2) + 1]) / 2 
+  }
+  median_right <-  median(feature)
+  
+  # Мода
+  mode <- as.numeric(names(sort(-table(feature))[1]))
+  mode_right <- as.numeric(names(table(feature))[which.max(table(feature))])
+  
+  # Дисперсия
+  variance <- sum((feature - mean)^2) / (length(feature) - 1)
+  variance_right <- var(feature)
+  
+  # Среднее отклонение
+  std <- sqrt(variance)
+  std_right <- sd(feature)
+  
+  cat("Среднее:", mean, "\n") 
+  cat("Медиана:", median, "\n")
+  cat("Мода:", mode, "\n") 
+  cat("Дисперсия:", variance, "\n") 
+  cat("Cтандартное отклонение:", std, "\n")
+}
+
+# Работа с Month
+
+# Выведем уникальные значения для поиска выбросов
+library(dplyr)
+my_summary_data <- data %>%
+  group_by(Month) %>%
+  summarise(Count = n())  
+my_summary_data
+
+# Выбросов нет
+
+# Визуадизация распределения
+visualize_factor_distribution(data$Month, "Month")
+
+# Вывод метрик
+show_metrics(data$Close)
+
+
+# Работа с Close
 
 # Убеждаемся в отсутсвии выбросов с помощью ящика с усами
 boxplot(data$Close, ylab = "Close")
 
 # Визуадизация распределения
-ggplot(data, aes(x = data$Close)) +
-  # Гистограмма
-  geom_histogram(aes(y = after_stat(density)), bins = 20, fill = "skyblue", color = "black") +
-  # Полигон частот
-  geom_density(alpha = 0.4, fill = "lightgreen") + ggtitle("Распределение Close") +
-  
-  # Добавление подписей осей
-  xlab("Close price") +
-  ylab("Density")
+visualize_distribution(data$Close, "Close")
 
-# Среднее
-mean_close <- sum(data$Close) / length(data$Close)
-mean_right_close <- mean(data$Close)
+show_metrics(data$Close)
 
-# Медиана
-sorted_close <- sort(data$Close)
-if (length(sorted_close) %% 2 == 1) { 
-  median_close <- sorted_close[(length(sorted_close) + 1) %/% 2] 
-} else { 
-    median_close <- (sorted_close[length(sorted_close) %/% 2] + sorted_close[(length(sorted_close) %/% 2) + 1]) / 2 
-}
-median_right_close <-  median(data$Close)
 
-# Мода
-mode_close <- as.numeric(names(sort(-table(data$Close))[1]))
-mode_right_close <- as.numeric(names(table(data$Close))[which.max(table(data$Close))])
-
-# Дисперсия
-variance_close <- sum((data$Close - mean_close)^2) / (length(data$Close) - 1)
-variance_right_close <- var(data$Close)
-
-# Среднее отклонение
-std_close <- sqrt(variance_close)
-std_right_close <- sd(data$Close)
-
-cat("Среднее:", mean_close, "\n") 
-cat("Медиана:", median_close, "\n")
-cat("Мода:", mode_close, "\n") 
-cat("Дисперсия:", variance_close, "\n") 
-cat("Cтандартное отклонение:", std_close, "\n")
-
-### Работа с Number of trades
+# Работа с Number of trades
 
 # Убеждаемся в наличии выбросов с помощью ящика с усами
 boxplot(data$Number.of.trades, ylab = "Number of trades")
 
 # Удаление выбросов методом межквартильного диапазона
-Q1 <- quantile(data$Number.of.trades, .25)
-Q3 <- quantile(data$Number.of.trades, .75)
-IQR <- IQR(data$Number.of.trades)
-data <- subset(data, data$Number.of.trades > (Q1 - 1.5 * IQR) & data$Number.of.trades < (Q3 + 1.5 * IQR))
+Q1 <- quantile(feature, .25)
+Q3 <- quantile(feature, .75)
+IQR <- IQR(feature)
+data <- subset(data, feature > (Q1 - 1.5 * IQR) & feature < (Q3 + 1.5 * IQR))
 
 # Снова проверяем ящик с усами
 boxplot(data$Number.of.trades, ylab = "Number of trades")
 
 # Визуализация распределения
-ggplot(data, aes(x = Number.of.trades)) +
-  # Гистограмма
-  geom_histogram(aes(y = after_stat(density)), bins = 20, fill = "skyblue", color = "black") +
-  # Полигон частот
-  geom_density(alpha = 0.4, fill = "lightgreen") + ggtitle("Распределение Number of trades") +
-  
-  # Добавление подписей осей
-  xlab("Number of trades") +
-  ylab("Density")
+visualize_distribution(data$Number.of.trades, "Number of trades")
 
-# Среднее
-mean_trades <- sum(data$Number.of.trades) / length(data$Number.of.trades)
-mean_right_trades <- mean(data$Number.of.trades)
-
-# Медиана
-sorted_trades <- sort(data$Number.of.trades)
-if (length(sorted_trades) %% 2 == 1) { 
-  median_trades <- sorted_trades[(length(sorted_trades) + 1) %/% 2] 
-} else { 
-  median_trades <- (sorted_trades[length(sorted_trades) %/% 2] + sorted_trades[(length(sorted_trades) %/% 2) + 1]) / 2 
-}
-median_right_trades <-  median(data$Number.of.trades)
-
-# Мода
-mode_trades <- as.numeric(names(sort(-table(data$Number.of.trades))[1]))
-mode_right_trades <- as.numeric(names(table(data$Number.of.trades))[which.max(table(data$Number.of.trades))])
-
-# Дисперсия
-variance_trades <- sum((data$Number.of.trades - mean_trades)^2) / (length(data$Number.of.trades) - 1)
-variance_right_trades <- var(data$Number.of.trades)
-
-# Среднее отклонение
-std_trades <- sqrt(variance_trades)
-std_right_trades <- sd(data$Number.of.trades)
-
-cat("Среднее:", mean_trades, "\n") 
-cat("Медиана:", mean_trades, "\n")
-cat("Мода:", mode_trades, "\n") 
-cat("Дисперсия:", variance_trades, "\n") 
-cat("Cтандартное отклонение:", std_trades, "\n")
-
+# Вывод метрик
+show_metrics(data$Number.of.trades)
