@@ -26,15 +26,17 @@ visualize_distribution = function(feature, name) {
 
 # Построение графиков для визуализации категориальной переменной
 visualize_factor_distribution = function(feature, name) {
-  ggplot(data, aes(x = factor(feature))) + 
+  ggplot(data, aes(x = feature)) + 
+    # Гистограмма
     geom_bar(fill = "skyblue", color = "black") + 
+    geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) +
     # Добавление подписей осей 
     xlab(name) + ylab("Count") + 
     ggtitle(paste("Распределение", name, sep=" ")) 
 }
     
 # Вывод метрик
-show_metrics = function(feature) {
+show_metrics = function(feature, name) {
   # Среднее
   mean <- sum(feature) / length(feature)
   mean_right <- mean(feature)
@@ -60,11 +62,12 @@ show_metrics = function(feature) {
   std <- sqrt(variance)
   std_right <- sd(feature)
   
-  cat("Среднее:", mean, "\n") 
-  cat("Медиана:", median, "\n")
-  cat("Мода:", mode, "\n") 
-  cat("Дисперсия:", variance, "\n") 
-  cat("Cтандартное отклонение:", std, "\n")
+  cat(paste("Метрики для", name, sep=" "), "\n")
+  cat("Среднее:", mean, "Верное среднее:", mean_right, "\n") 
+  cat("Медиана:", median, "Верная медиана:", median_right, "\n")
+  cat("Мода:", mode, "Верная мода:", mode_right, "\n") 
+  cat("Дисперсия:", variance, "Верная дисперсия:", variance_right, "\n") 
+  cat("Cтандартное отклонение:", std, "Верное стандратное отклонение:", std_right, "\n")
 }
 
 # Работа с Month
@@ -81,9 +84,6 @@ my_summary_data
 # Визуадизация распределения
 visualize_factor_distribution(data$Month, "Month")
 
-# Вывод метрик
-show_metrics(data$Close)
-
 
 # Работа с Close
 
@@ -93,7 +93,7 @@ boxplot(data$Close, ylab = "Close")
 # Визуадизация распределения
 visualize_distribution(data$Close, "Close")
 
-show_metrics(data$Close)
+show_metrics(data$Close, "Close")
 
 
 # Работа с Number of trades
@@ -102,10 +102,10 @@ show_metrics(data$Close)
 boxplot(data$Number.of.trades, ylab = "Number of trades")
 
 # Удаление выбросов методом межквартильного диапазона
-Q1 <- quantile(feature, .25)
-Q3 <- quantile(feature, .75)
-IQR <- IQR(feature)
-data <- subset(data, feature > (Q1 - 1.5 * IQR) & feature < (Q3 + 1.5 * IQR))
+Q1 <- quantile(data$Number.of.trades, .25)
+Q3 <- quantile(data$Number.of.trades, .75)
+IQR <- IQR(data$Number.of.trades)
+data <- subset(data, data$Number.of.trades > (Q1 - 1.5 * IQR) & data$Number.of.trades < (Q3 + 1.5 * IQR))
 
 # Снова проверяем ящик с усами
 boxplot(data$Number.of.trades, ylab = "Number of trades")
@@ -114,4 +114,5 @@ boxplot(data$Number.of.trades, ylab = "Number of trades")
 visualize_distribution(data$Number.of.trades, "Number of trades")
 
 # Вывод метрик
-show_metrics(data$Number.of.trades)
+show_metrics(data$Number.of.trades, "Number of trades")
+
