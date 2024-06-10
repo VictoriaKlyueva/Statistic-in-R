@@ -29,7 +29,7 @@ visualize_factor_distribution = function(feature, name) {
   ggplot(data, aes(x = feature)) + 
     # Гистограмма
     geom_bar(fill = "skyblue", color = "black") + 
-    geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) +
+    geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
     # Добавление подписей осей 
     xlab(name) + ylab("Count") + 
     ggtitle(paste("Распределение", name, sep=" ")) 
